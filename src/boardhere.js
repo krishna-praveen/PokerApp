@@ -3,7 +3,9 @@ import './index.css';
 import PropTypes from 'prop-types';
 import './App.css';
 import Timer from './timer.js';
-import styled from 'styled-components'
+import styled from 'styled-components';
+
+// import imageUrl from "./static/images/cardback.png";
 
 
 class Board extends React.Component {
@@ -28,24 +30,133 @@ class Board extends React.Component {
     }
 
 
+    internalFixTheRanking = (rank) =>{
+        var ret_rank = 'NoRank';
+        if (rank === 14) {
+          ret_rank = 'ace';
+        } else if (rank === 13) {
+          ret_rank = 'king';
+        } else if (rank === 12) {
+          ret_rank = 'queen';
+        } else if (rank === 11) {
+          ret_rank = 'jack';
+        } else if (rank > 0 && rank < 11) {
+          // Normal card 1 - 10
+          ret_rank = rank;
+        } else {
+          console.log(typeof rank);
+          alert('Unknown rank ' + rank);
+        }
+        return ret_rank;
+      }
+      
+    internalFixTheSuiting (suit) {
+        if (suit === 'c') {
+          suit = 'clubs';
+        } else if (suit === 'd') {
+          suit = 'diamonds';
+        } else if (suit === 'h') {
+          suit = 'hearts';
+        } else if (suit === 's') {
+          suit = 'spades';
+        } else {
+          alert('Unknown suit ' + suit);
+          suit = 'yourself';
+        }
+        return suit;
+      }
 
+    setCardUrl(cardNumber){
+        var suit = cardNumber.substring(0,1);
+        var rank = parseInt(cardNumber.substring(1));
+        suit = this.internalFixTheSuiting(suit);
+        rank = this.internalFixTheRanking(rank);
+        // return './static/images/' + rank + '_of_' + suit + '.png';
+        return rank + '_of_' + suit + '.png';
+
+    }
+
+    importAll(r){
+      let images = {};
+      r.keys().map((item, index) => { images[item.replace('./', '')] = r(item); });
+      return images;
+    };
 
 
     CardsAreThere(props){
-        const RedText = styled.p`color:red`;
+        // let imgUrl = "./static/images/cardback.png";
+        const cardText = styled.div`
+          background-image: url(${props => props.url});
+          background-size: 100%;
+          border-radius: 4px;
+          height: 73px;
+          width: 50px;
+        `;
+
+        // https://stackoverflow.com/questions/30373343/reactjs-component-names-must-begin-with-capital-letters
+        // All components must start with capital letter other wise it will consider
+        // them as normal html component like div or p
+        const CardGroup = styled.div`
+          background-image: url(${props => props.url});
+          background-size:100%;
+          border-radius: 4px;
+          top: -10px;
+          height:73px;
+          width 50px;
+          background-repeat:no-repeat;
+          left: ${props => props.left};
+          position: absolute;
+
+        `;
+
+        const boardCardText = styled(cardText)`
+          height: 73px;
+          left: 0px;
+          background-repeat: no-repeat;
+          position: absolute;
+          top: -10px;
+          width: 50px;
+          color:palevioletred;
+        `;
         const cards = props.boardCards;
+        const spacingArray = ["0px", "52px","104px","156px","208px"];
+        // const boardEls = Object.entries()
+
+        // Importing all the images here. We can do this outside as well
+        function importAll(r){
+          let images = {};
+          r.keys().map((item, index) => { images[item.replace('./', '')] = r(item); });
+          return images;
+        };
+        const imagesAll = this.importAll(require.context('./static/images', false, /\.(png|jpe?g|svg)$/));
+        // console.log(imagesAll);
+
+        // Creating the board deck here
+        const cardsDeck = (cards, spacingArray) =>{
+          let arr = [];
+          console.log("cards are "+cards);
+          for (let index = 0; index < 5; index++) {
+            let defaultUrl = require('./static/images/cardback.png');
+            if(cards[index] !== null && cards[index] !== undefined){
+               let cardHere = this.setCardUrl(cards[index]);
+               console.log(cardHere);
+               defaultUrl = imagesAll[cardHere];
+            }
+            arr.push(
+              <CardGroup left={spacingArray[index]} url={defaultUrl}></CardGroup>
+            )
+          }
+          return arr;
+        };
+
+        // Return the 5 cards here.
         if(cards.length !== null){
         //    return <div> CARDS : {cards} </div>
            return (
-           <div id="board">
-            <div>CARDS : {cards}</div>
-            <div id="flop1" class="card boardcard"></div>
-            <div id="flop2" class="card boardcard"></div>
-            <div id="flop3" class="card boardcard"></div>
-            <div id="turn" class="card boardcard"></div>
-            <div id="river" class="card boardcard"></div>
-
-        </div>
+              <div id="board">
+                    {/* <div>CARDS : {cards}</div> */}
+                    {cardsDeck(cards,spacingArray)}
+              </div>
            )
         }
     }
@@ -56,40 +167,26 @@ class Board extends React.Component {
     myChangeHandler = (event) => {
         event.preventDefault();
         this.setState({amountToBet:event.target.value})
-    }
+    };
 
     mySubmitHandler = (event) => {
         event.preventDefault();
         alert("You are submitting " + this.state.amountToBet);
         this.props.moves.handleBet(this.state.amountToBet);
 
-    }
-    // onClick = id => {
-    //   if (this.isActive(id)) {
-    //     this.props.moves.clickCell(id);
-    //   }
-    // };
-    //
-    // isActive(id) {
-    //   return this.props.isActive && this.props.G.cells[id] === null;
-    // }
-
+    };
 
     render() {
         if (this.props.playerID === null) {
-            return <div className="table-interior">
+            return (<div className="table-interior">
               <span>
-
                 <span>
-                    {/* <CardsAreThere boardCards={this.props.G.boardCards}/> */}
                     {this.CardsAreThere(this.props.G)}
                 </span>
-
-                
                 <br></br>
-                
                 <Timer/>
                 <br/>
+                <br></br>
                 <span>
                     TablePot :  {this.props.G.potOnTable}
                     <br/>
@@ -97,14 +194,11 @@ class Board extends React.Component {
                 </span>
               </span>
               
-            </div>;
+            </div>);
         }
 
 
         // The following are the component of boards here
-
-
-
 
         let className = 'player';
         let active = false;
@@ -113,7 +207,7 @@ class Board extends React.Component {
         let onClick = () => {};
         let alertThis = (a)=>{alert(a)};
 
-
+        
 
         if (this.props.ctx.activePlayers) {
             if (this.props.playerID in this.props.ctx.activePlayers) {
@@ -143,21 +237,8 @@ class Board extends React.Component {
                         <button key={e[0]} onClick={() => e[1]()}>
                             {e[0]}
                         </button>
-                        {/*
-            <form onSubmit={() => e[1]()}>
-            <label>
-              {e[0]}:
-              <input
-                key = {e[0]}
-                name="numberOfGuests"
-                type="number"
-                 />
-            </label>
-            </form>*/}
-
                     </div>
                 )
-                // .map(e => (console.log(e)))
             );
 
 
@@ -173,8 +254,6 @@ class Board extends React.Component {
                 </button>
             ));
         
-        // const QuickBets = 
-
 
         // console.log("pots are like this ", this.props.G.playerPots);
         // console.log("moves are like this ", this.props.moves);

@@ -65,6 +65,8 @@ export const pokerGame = {
     //     BetThisMuchAmount,
     // },
 
+    // Have to write a condition which checks if all the players are folded and then
+    // goes to the Preflop phase if that case happens anywhere at any point in the game
     phases: {
         PreFlop: {
             onBegin: (G, ctx)=> {
@@ -311,6 +313,13 @@ export const pokerGame = {
 
                 // Setting Current Raise amount to 0, Just checking whether this will work
                 G.currentRaiseAmount = 0;
+
+                // Setting the players status to ingame to whoever is playing,
+                // Although we are performing this step in PreFlop, if everyoen is folded, 
+                // Then it will trigger an infinite loop and Phase is set to null and Preflop
+                //  is never triggered, we can overcome this by changing the players status
+                // here and resetting the checkIfPhaseEnds condition's output before going to Preflop
+
             }
 
         }
@@ -368,6 +377,17 @@ function whoStartsNextPhase(G,ctx){
 }
 
 
+function checkIfAllExceptOneIsFolded(G,ctx){
+    // Check if all the players except atmost one is folded.
+    // If active players or non folded players are >1 this returns false
+    // If active players or non folded players is 1 this returns true
+    // First check if the players who are playing is >1, if there is only one player
+    //  in the lobby this will always returns true.
+    let currPlayers = getAllActivePlayers(G,ctx);
+    let numOfActivePlayers = currPlayers.length;
+    return numOfActivePlayers === 1 ? true : false;
+}
+
 function checkIfPhaseEnds(G,ctx){
     // console.log("THIS phase is ending")
     // G.canBreak = true;
@@ -405,7 +425,14 @@ function checkIfPhaseEnds(G,ctx){
     //  returning true.
     let toExit = conditionArray.every(v=> v===false);
     console.log("Should we exit now "+toExit);
-    return toExit;
+
+    // Check if all activeplayers are only 1, and everyone folded
+    let everyOneFolded = checkIfAllExceptOneIsFolded(G,ctx);
+    console.log("Is everyone folded now ? "+everyOneFolded);
+
+
+    // If everyone folded then irrespective of game status return true here.
+    return toExit||everyOneFolded;
 
     // --------
     // let status = G.playerObjs["0"]["status"];

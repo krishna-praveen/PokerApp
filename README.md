@@ -1,3 +1,6 @@
+This project uses the following library
+[BoardGame](https://boardgame.io/)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
